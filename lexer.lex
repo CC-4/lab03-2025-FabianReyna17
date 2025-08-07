@@ -84,14 +84,14 @@ import java.io.IOException;
 
 SEMI = ";" // Definan aqui sus Tokens/ER por ejemplo: "el token SEMI"
 WHITE = (" "|\t|\n)
-PLUS = \+
-MINUS = -
-MULT = \*
-DIV = /
-MOD = %
-EXP = ^
-LPAREN = \(
-RPAREN = \)
+PLUS = "+"
+MINUS = "-"
+MULT = "*"
+DIV = "/"
+MOD = "%"
+EXP = "^"
+LPAREN = "("
+RPAREN = ")"
 NUMBER = [0-9]+
 
 %%
@@ -115,8 +115,6 @@ NUMBER = [0-9]+
 <YYINITIAL>{RPAREN}     { return new Token(Token.RPAREN);   }
 
 <YYINITIAL>{NUMBER}     { return new Token(Token.NUMBER, yytext()); }
-
-<YYINITIAL>{ERROR}      { return new Token(Token.ERROR, yytext()); }
 
 <YYINITIAL>{WHITE}  { /* NO HACER NADA */             }
 
