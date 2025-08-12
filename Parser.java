@@ -33,7 +33,7 @@ public class Parser {
 
         // Shunting Yard Algorithm
         // Imprime el resultado de operar el input
-        // System.out.println("Resultado: " + this.operandos.peek());
+        System.out.println("Resultado: " + this.operandos.peek() + "\n");
 
         // Verifica si terminamos de consumir el input
         if(this.next != this.tokens.size()) {
@@ -48,7 +48,7 @@ public class Parser {
         if(this.next < this.tokens.size() && this.tokens.get(this.next).equals(id)) {
             
             // Codigo para el Shunting Yard Algorithm
-            /*
+            
             if (id == Token.NUMBER) {
 				// Encontramos un numero
 				// Debemos guardarlo en el stack de operandos
@@ -67,7 +67,7 @@ public class Parser {
 				// Que pushOp haga el trabajo, no quiero hacerlo yo aqui
 				pushOp( this.tokens.get(this.next) );
 			}
-			*/
+			
 
             this.next++;
             return true;
@@ -77,15 +77,25 @@ public class Parser {
 
     // Funcion que verifica la precedencia de un operador
     private int pre(Token op) {
-        /* TODO: Su codigo aqui */
-
-        /* El codigo de esta seccion se explicara en clase */
-
+        if (op == null) return -1;
         switch(op.getId()) {
         	case Token.PLUS:
+        	case Token.MINUS:
         		return 1;
+
         	case Token.MULT:
+        	case Token.DIV:
+        	case Token.MOD:
         		return 2;
+
+            case Token.EXP:
+                return 3;
+
+            case Token.UNARY:
+                return 4;
+
+            case Token.LPAREN:
+                return 0;
         	default:
         		return -1;
         }
@@ -94,26 +104,95 @@ public class Parser {
     private void popOp() {
         Token op = this.operadores.pop();
 
-        /* TODO: Su codigo aqui */
+        if (this.operandos.size() < 2) {
+            return;
+        }
 
-        /* El codigo de esta seccion se explicara en clase */
 
         if (op.equals(Token.PLUS)) {
         	double a = this.operandos.pop();
         	double b = this.operandos.pop();
         	// print para debug, quitarlo al terminar
-        	System.out.println("suma " + a + " + " + b);
+        	//System.out.println("suma " + b + " + " + a);
         	this.operandos.push(a + b);
+
+        } else if (op.equals(Token.MINUS)) {
+            double a = this.operandos.pop();
+            double b = this.operandos.pop();
+            // print para debug, quitarlo al terminar
+            //System.out.println("resta " + b + " - " + a);
+            this.operandos.push(b - a);
+
         } else if (op.equals(Token.MULT)) {
-        	double a = this.operandos.pop();
-        	double b = this.operandos.pop();
-        	// print para debug, quitarlo al terminar
-        	System.out.println("mult " + a + " * " + b);
-        	this.operandos.push(a * b);
+            double a = this.operandos.pop();
+            double b = this.operandos.pop();
+            // print para debug, quitarlo al terminar
+            //System.out.println("mult " + b + " * " + a);
+            this.operandos.push(b * a);
+
+        } else if (op.equals(Token.DIV)) {
+            double a = this.operandos.pop();
+            double b = this.operandos.pop();
+            // print para debug, quitarlo al terminar
+            //System.out.println("div " + b + " / " + a);
+            this.operandos.push(b / a);
+
+        } else if (op.equals(Token.MOD)) {
+            double a = this.operandos.pop();
+            double b = this.operandos.pop();
+            // print para debug, quitarlo al terminar
+            //System.out.println("mod " + b + " % " + a);
+            this.operandos.push(b % a);
+            
+        } else if (op.equals(Token.EXP)) {
+            double a = this.operandos.pop();
+            double b = this.operandos.pop();
+            // print para debug, quitarlo al terminar
+            //System.out.println("potencia " + b + " ^ " + a);
+            this.operandos.push(Math.pow(b, a));
         }
     }
 
     private void pushOp(Token op) {
+        if (op.getId() == Token.LPAREN) {
+            operadores.push(op);
+            return;
+        }
+
+        if (op.getId() == Token.RPAREN) {
+            while (!operadores.isEmpty() && operadores.peek().getId() != Token.LPAREN) {
+                popOp();
+            }
+
+            if (operadores.isEmpty()) {
+                return;
+            }
+
+            operadores.pop();
+            return;
+        }
+        
+
+        while (!this.operadores.isEmpty() && this.operadores.peek().getId() != Token.LPAREN) {
+            Token top = this.operadores.peek();
+            int precendencia_top = pre(top);
+            int precedencia_actual = pre(op);
+
+            if (precendencia_top > precedencia_actual) {
+                popOp();
+
+            } else if (precendencia_top == precedencia_actual) {
+                if (op.getId() != Token.EXP) {
+                    popOp();
+                } else {
+                    break;
+                } 
+            } else {
+                break;
+            }
+        }
+        this.operadores.push(op);
+
         /* TODO: Su codigo aqui */
 
         /* Casi todo el codigo para esta seccion se vera en clase */
@@ -134,8 +213,77 @@ public class Parser {
     }
 
     private boolean E() {
-        return false;
+        if (!T()) return false;
+        return E2();
     }
 
     /* TODO: sus otras funciones aqui */
+
+    private boolean E2() {
+        while (this.next < this.tokens.size()) {
+            int id = this.tokens.get(this.next).getId();
+            if (id == Token.PLUS || id == Token.MINUS) {
+                if (!term(id))  return false;
+                if (!T()) return false;
+            } else {
+                break;
+            }
+        }
+        return true;
+    }
+
+    private boolean T() {
+        if (!F()) return false;
+        return T2();
+    }
+
+    private boolean T2() {
+        while (this.next < this.tokens.size()) {
+            int id = this.tokens.get(this.next).getId();
+            if (id == Token.MULT || id == Token.DIV || id == Token.MOD) {
+                if (!term(id)) return false;
+                if (!F()) return false;
+            } else {
+                break;
+            }
+        }
+        return true;
+    }
+
+    private boolean F() {
+        if (!G()) return false;
+        return F2();
+    }
+
+    private boolean F2() {
+        if (this.next < this.tokens.size()) {
+            int id = this.tokens.get(this.next).getId();
+            if (id == Token.EXP) {
+                if (!term(id)) return false;
+                if (!F()) return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean G() {
+        if (this.next >= this.tokens.size()) return false;
+        int id = this.tokens.get(this.next).getId();
+        if (id == Token.MINUS) {
+            if (!term(Token.MINUS)) return false;
+            return G();
+
+        } else if (id == Token.NUMBER) {
+            return term(Token.NUMBER);
+            
+        } else if (id == Token.LPAREN) {
+            if (!term(Token.LPAREN)) return false;
+            if (!E()) return false;
+            if (!term(Token.RPAREN)) return false;
+            return true;
+        } else {
+            return false;
+        }
+    }
+        
 }
